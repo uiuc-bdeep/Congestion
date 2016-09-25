@@ -6,12 +6,12 @@ image_resource:
   source: {repository: ehaydenr/bdeep-r}
 
 inputs:
-- name: resource-repo
-- name: resource-data-stores
-- name: resource-data-stream
+- name: repo
+- name: data-stores
+- name: data-stream
 
 outputs:
 - name: analysis
 
 run:
-  path: resource-repo/run-analysis/run-analysis.sh
+  path: repo/pipelines/vot/run-analysis/run-analysis.sh

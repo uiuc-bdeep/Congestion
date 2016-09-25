@@ -4,10 +4,10 @@ set -x
 
 ls -al
 
-tar -xzf resource-analysis/analysis.tar.gz
+tar -xzf analysis/analysis.tar.gz
 
 ls -al
 
-TEMPLATE="resource-repo/VOT extended crawler.tex"
+TEMPLATE="repo/pipelines/vot/VOT extended crawler.tex"
 
 pdflatex -jobname=report -output-directory report "$TEMPLATE"

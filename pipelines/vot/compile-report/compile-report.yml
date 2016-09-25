@@ -6,11 +6,11 @@ image_resource:
   source: {repository: ehaydenr/latex}
 
 inputs:
-- name: resource-repo
-- name: resource-analysis
+- name: repo
+- name: analysis
 
 outputs:
 - name: report
 
 run:
-  path: resource-repo/compile-report/compile-report.sh
+  path: repo/pipelines/vot/compile-report/compile-report.sh

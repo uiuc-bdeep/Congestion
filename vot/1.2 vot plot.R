@@ -12,6 +12,30 @@
 # Prelims -------------------------------------------------------------------------------------
   rm(list=ls())
 
+  # Inputs files:
+    #   vot estimation results
+    #     "stream/vot/extended crawler - vot.csv"
+    
+  # Outputs files:
+    # png figure
+    out.path <- Sys.getenv("BDEEP_votOutPath")
+    if (out.path == ""){
+      out.path <- "views/figures/vot/median vot.png" 
+    }
+  
+  # Working directory
+    wd.folder <- Sys.getenv("BDEEP_PROD")
+    serv <- Sys.getenv("BDEEP_SERV")
+    
+    if (wd.folder == ""){
+      if (serv == ""){
+        setwd("//141.142.209.255/share/projects/Congestion")
+      }
+      else {
+        setwd("~/share/projects/Congestion")
+      }
+    }
+    
 # Required packages
  
   # required packages
@@ -32,9 +56,6 @@
 
 # read data -----------------------------------------------------------------------------------
 
-  # set working directory
-    setwd("//141.142.209.255/share/projects/Congestion")
-    
    df <- read.csv("stream/vot/extended crawler - vot.csv")
    
   ggplot() +
@@ -48,4 +69,4 @@
      scale_x_continuous(breaks = 6:22) +
      labs(x = "departure time", y = "Median VOT (R$/hour)") + 
      ggtitle("VOT estimation")
-  ggsave(file="views/figures/vot/median vot.png", width = 8, height = 5)
+  ggsave(file=out.path, width = 8, height = 5)

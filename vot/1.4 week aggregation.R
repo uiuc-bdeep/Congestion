@@ -12,6 +12,42 @@
 # Prelims -------------------------------------------------------------------------------------
   rm(list=ls())
 
+  # Inputs files:
+    #   vot estimation results by trip
+    #     "stream/vot/vot_by_trip.csv"
+    # household survey
+    #    "stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv"
+    # auxiliary currency convert
+    #    "stores/auxiliary/exchange rates.csv"
+    # normal crawler files
+    #    "stream/normal-crawler"
+    
+    
+  # Outputs files:
+    # csv tables
+    out.path <- Sys.getenv("BDEEP_votOutPath")
+    if (out.path == ""){
+      out.path <- "intermediate/vot/travel time and vot - daily.csv"
+    }
+    
+    if (out.path2 == ""){
+      out.path <- "intermediate/vot/travel time and vot - weekly.csv"
+    }
+  
+  # Working directory
+    wd.folder <- Sys.getenv("BDEEP_PROD")
+    serv <- Sys.getenv("BDEEP_SERV")
+    
+    if (wd.folder == ""){
+      if (serv == ""){
+        setwd("//141.142.209.255/share/projects/Congestion")
+      }
+      else {
+        setwd("~/share/projects/Congestion")
+      }
+    }
+    
+
 # Required packages -----------------------------------------------------------
   packages <- c("stargazer",
                 "ggplot2",
@@ -34,9 +70,6 @@
 
 # read data -----------------------------------------------------------------------------------
 
-  # set working directory
-  setwd("//141.142.209.255/share/projects/Congestion")
-  
   # read data from original household survey
   HH12 <- read.csv("stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv")
   
@@ -124,5 +157,5 @@
   HH12.wgd[4,] <- c(8, 5*sum(HH12.gd$VTT_8*HH12.gd$FE_VIA), 5*sum(HH12.gd$travel.time_8*HH12.gd$FE_VIA)/60)
   HH12.wgd[5,] <- c(9, 5*sum(HH12.gd$VTT_9*HH12.gd$FE_VIA), 5*sum(HH12.gd$travel.time_9*HH12.gd$FE_VIA)/60)
   
-  write.csv(HH12.gd, "stream/vot/travel time and vot - daily.csv", row.names = F)
-  write.csv(HH12.wgd, "stream/vot/travel time and vot - weekly.csv", row.names = F)
+  write.csv(HH12.gd, out.path, row.names = F)
+  write.csv(HH12.wgd, out.path2, row.names = F)

@@ -12,8 +12,33 @@
 # Prelims -------------------------------------------------------------------------------------
   rm(list=ls())
 
-
-
+  # Inputs files:
+    #   vot estimation results
+    #     "stream/vot/extended crawler - vot.csv"
+    # household survey
+    #    "stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv"
+    
+    
+  # Outputs files:
+    # csv table
+    out.path <- Sys.getenv("BDEEP_votOutPath")
+    if (out.path == ""){
+      out.path <- "intermediate/vot/intermediate store/vot_by_trip.csv" 
+    }
+  
+  # Working directory
+    wd.folder <- Sys.getenv("BDEEP_PROD")
+    serv <- Sys.getenv("BDEEP_SERV")
+    
+    if (wd.folder == ""){
+      if (serv == ""){
+        setwd("//141.142.209.255/share/projects/Congestion")
+      }
+      else {
+        setwd("~/share/projects/Congestion")
+      }
+    }
+    
 # Required packages -----------------------------------------------------------
   packages <- c("stargazer",
                 "ggplot2",
@@ -34,9 +59,6 @@
   lapply(packages, pkgTest)
 
 # read data -----------------------------------------------------------------------------------
-
-  # set working directory
-  setwd("//141.142.209.255/share/projects/Congestion")
 
   # read VOT estimates
   VOT <- read.csv("stream/vot/extended crawler - vot.csv")
@@ -85,5 +107,5 @@
   TD <- rbind(TD0, TD1, TD2)
   
   TD <- TD[,c("ID_ORDEM", "vot", "vot.se")]
-  write.csv(TD, "stream/vot/vot_by_trip.csv", row.names=FALSE)
+  write.csv(TD, out.path, row.names=FALSE)
   

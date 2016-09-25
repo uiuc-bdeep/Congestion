@@ -23,7 +23,7 @@
     # csv table
     out.path <- Sys.getenv("BDEEP_votOutPath")
     if (out.path == ""){
-      out.path <- "stream/vot/extended crawler - vot.csv" 
+      out.path <- "intermediate/vot/intermediate store/extended crawler - vot.csv" 
     }
     
     # tex table

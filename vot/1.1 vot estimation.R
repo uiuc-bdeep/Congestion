@@ -11,8 +11,41 @@
 
 # Prelims -------------------------------------------------------------------------------------
   rm(list=ls())
-  st <- Sys.time()
-# Input values
+
+  # Inputs files:
+    #   extended crawler output from script 1.0 
+    #     "intermediate/vot/intermediate store/Extended Crawler_all.csv"
+    #   household survey
+    #     "stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv"
+
+
+  # Outputs files:
+    # csv table
+    out.path <- Sys.getenv("BDEEP_votOutPath")
+    if (out.path == ""){
+      out.path <- "stream/vot/extended crawler - vot.csv" 
+    }
+    
+    # tex table
+    out.path2 <- Sys.getenv("BDEEP_votOutPath")
+    if (out.path == ""){
+      out.path <- "views/tables/vot_extended crawler.tex" 
+    }
+        
+  # Working directory
+    wd.folder <- Sys.getenv("BDEEP_PROD")
+    serv <- Sys.getenv("BDEEP_SERV")
+    
+    if (wd.folder == ""){
+      if (serv == ""){
+        setwd("//141.142.209.255/share/projects/Congestion")
+      }
+      else {
+        setwd("~/share/projects/Congestion")
+      }
+    }
+    
+  # Input values ------------------------------------------------------------------------------
   # Hours evaluated
   initial.h <- 6
   final.h <- 22
@@ -25,8 +58,8 @@
   #   source: Basso et al (2011): http://www.sciencedirect.com/science/article/pii/S0967070X1100014X
   #   exchange rate: http://usd.lookly.com/Average-Analytics/BRL/
   CarKmCost <- 0.3804*1.952
-
-
+  
+  
 # Required packages -----------------------------------------------------------
   packages <- c("stargazer",
                 "ggplot2",
@@ -34,7 +67,7 @@
                 "data.table",
                 "gmnl")
 
-# function to verify packages and install missing ones ------------------------
+# function to verify packages and install missing packages -------------------
   pkgTest <- function(x)
   {
     if (!require(x, character.only = TRUE))
@@ -43,12 +76,9 @@
       if(!require(x, character.only = TRUE)) stop("Package not found")
     }
   }
-  
   # run the function for all required packages
   lapply(packages, pkgTest)
 
-  # set working directory
-  setwd("//141.142.209.255/share/projects/Congestion")
   
 # read and manipulatye data from original household survey ------------------------------------
   HH12 <- read.csv("stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv")
@@ -363,18 +393,17 @@
   
   
   
-  write.csv(results, "stream/vot/extended crawler - vot.csv", row.names=FALSE)
+  write.csv(results, out.path, row.names=FALSE)
   
   
   labels = as.character(list.labels)
   
   stargazer(list.mml,
             keep = c("Time", "Cost", "Cost_I1", "Cost_I2"),
-            out = "views/tables/vot_extended crawler.tex",
+            out = out.path2,
             title = "VOT Coefficients from Mixed Logit Estimation",
             column.labels = labels,
             model.numbers = FALSE)
-  
-  ft <- Sys.time()
+
   
   

@@ -22,10 +22,18 @@
     }
 
     wd.folder <- Sys.getenv("BDEEP_PROD")
+    serv <- Sys.getenv("BDEEP_SERV")
+    
     if (wd.folder == ""){
-      setwd("//141.142.209.255/share/projects/Congestion")
+      if (serv == ""){
+        setwd("//141.142.209.255/share/projects/Congestion")
+      }
+      else {
+        setwd("~/share/projects/Congestion")
+      }
     }
-
+    
+    
 # merge extended crawler --------------------------------------------------------------------
   
   # list all files in the folder "stream/extended-crawler"

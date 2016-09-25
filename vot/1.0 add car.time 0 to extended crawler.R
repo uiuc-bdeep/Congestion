@@ -55,3 +55,6 @@
   
 # output --------------------------------------------------------------------------------------
   write.csv(DF.o, out_path, row.names=FALSE)
+  write.csv(DF.o, paste(out_path, 2, sep=""), row.names=FALSE)
+  
+  

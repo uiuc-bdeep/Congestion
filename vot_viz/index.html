@@ -124,12 +124,6 @@ function milesovertime(csvdata) {
       .style("text-anchor", "middle")
       .text("Cost ($)");
 
-    svg.append("text")
-      .attr("class", "graphtitle")
-      .attr("y", 10)
-      .attr("x", width/2)
-      .style("text-anchor", "middle")
-      .text("VOT Visualization");
 
     // draw the line
     svg.append("path")

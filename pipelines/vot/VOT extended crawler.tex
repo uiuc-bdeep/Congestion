@@ -1,0 +1,24 @@
+\documentclass[12pt]{article}
+
+% allows for letter footmarks in the title
+
+\usepackage{authblk}                         % Author and title
+\usepackage{booktabs}                        % table special lines
+\usepackage{caption}                         % table spacing options
+\usepackage[multiple]{footmisc}              % separate paper footnotes together
+\usepackage[margin=1in]{geometry}            % set document margins
+\usepackage{graphicx}                        % add figures with notes
+\usepackage[hyperfootnotes=false]{hyperref}  % hyperlinks
+\usepackage{makecell}                        % cell edtion (e.g. line break)
+\usepackage{mathtools}                       % mathematical equations
+\usepackage{natbib}                          % bibliography citation
+\usepackage[flushleft]{threeparttable}       % edit table notes
+
+
+\captionsetup[table]{skip=10pt}
+
+\begin{document}
+
+\input{"analysis/views/tables/vot_extended crawler.tex"}
+
+\end{document}

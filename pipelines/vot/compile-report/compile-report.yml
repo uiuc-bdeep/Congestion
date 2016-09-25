@@ -1,0 +1,16 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source: {repository: ehaydenr/latex}
+
+inputs:
+- name: resource-repo
+- name: resource-analysis
+
+outputs:
+- name: report
+
+run:
+  path: resource-repo/compile-report/compile-report.sh

@@ -12,14 +12,19 @@
 # Prelims -------------------------------------------------------------------------------------
   rm(list=ls())
 
-# inputs and outputs
+    # Inputs:
+    #   extended craler .csv files 
+    #   (stream/extended-crawler)
 
-  # input:
-    # extended crawler csvs (stream/extended-crawler)
-    
-  # output:
-    # csv with all extended craler data
-    out_path <- "intermediate/vot/intermediate store/Extended Crawler_all.csv"
+    out.path <- Sys.getenv("BDEEP_votOutPath")
+    if (out.path == ""){
+      out.path <- "intermediate/vot/intermediate store/Extended Crawler_all.csv" 
+    }
+
+    wd.folder <- Sys.getenv("BDEEP_PROD")
+    if (wd.folder == ""){
+      setwd("//141.142.209.255/share/projects/Congestion")
+    }
 
 # merge extended crawler --------------------------------------------------------------------
   
@@ -54,7 +59,6 @@
    })
   
 # output --------------------------------------------------------------------------------------
-  write.csv(DF.o, out_path, row.names=FALSE)
-  write.csv(DF.o, paste(out_path, 4, sep=""), row.names=FALSE)
+  write.csv(DF.o, out.path, row.names=FALSE)
   
   

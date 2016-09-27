@@ -3,7 +3,7 @@
 #   |  Transportation Mode Discrete Choice Estimation for Sao Paulo 2012                      |
 #   |                                                                                         |
 #   |  By:                                                                                    |
-#   |  Renato Schwambach Vieira                                                               |    
+#   |  Renato Schwambach Vieira                                                               |
 #   |  Big Data for Environmental Economics and Policy                                        |
 #   |  University of Illinois at Urbana Chamapaign                                            |
 #   |                                                                                         |
@@ -17,28 +17,13 @@
     #     "stream/vot/extended crawler - vot.csv"
     # household survey
     #    "stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv"
-    
-    
+
+	source("environment.R")
+
   # Outputs files:
     # csv table
-    out.path <- Sys.getenv("BDEEP_votOutPath")
-    if (out.path == ""){
-      out.path <- "intermediate/vot/intermediate store/vot_by_trip.csv" 
-    }
-  
-  # Working directory
-    wd.folder <- Sys.getenv("BDEEP_PROD")
-    serv <- Sys.getenv("BDEEP_SERV")
-    
-    if (wd.folder == ""){
-      if (serv == ""){
-        setwd("//141.142.209.255/share/projects/Congestion")
-      }
-      else {
-        setwd("~/share/projects/Congestion")
-      }
-    }
-    
+		out.path <- generatePath("intermediate/vot/intermediate store/vot_by_trip.csv")
+
 # Required packages -----------------------------------------------------------
   packages <- c("stargazer",
                 "ggplot2",
@@ -54,21 +39,21 @@
       if(!require(x, character.only = TRUE)) stop("Package not found")
     }
   }
-  
+
   # run the function for all required packages
   lapply(packages, pkgTest)
 
 # read data -----------------------------------------------------------------------------------
 
   # read VOT estimates
-  VOT <- read.csv("stream/vot/extended crawler - vot.csv")
-  
+  VOT <- read.csv(generatePath("stream/vot/extended crawler - vot.csv"))
+
   # read data from original household survey
-  HH12 <- read.csv("stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv")
-  
+  HH12 <- read.csv(generatePath("stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv"))
+
   # subset of trips
   TD <- subset(HH12, TIPOVG >= 0)
-  
+
   # Household income per capita
   TD$HH.IpC <- TD$RENDA_FA/TD$NO_MORAF
   # create income bins
@@ -81,17 +66,17 @@
                     TD$H_SAIDA + 1,
                     TD$H_SAIDA)
   TD$hour <- ifelse(TD$hour > 20 | TD$hour < 6, 20, TD$hour)
-  
+
   # Income_Departure.Time ID
-  TD$Inc.DepT_ID <- paste(TD$Income.bin, TD$hour, sep = " ") 
-   
+  TD$Inc.DepT_ID <- paste(TD$Income.bin, TD$hour, sep = " ")
+
   # subset income bins
   TD0 <- subset(TD, Income.bin == 0)
   VOT0 <- VOT[,c("central.hour", "vot.I0.m", "vot.I0.sd.m")]
   TD0 <- merge(TD0, VOT0, by.x = "hour", by.y = "central.hour")
   TD0 <- rename(TD0, c(vot.I0.m="vot"))
   TD0 <- rename(TD0, c(vot.I0.sd.m="vot.se"))
-  
+
   TD1 <- subset(TD, Income.bin == 1)
   VOT1 <- VOT[,c("central.hour", "vot.I1.m", "vot.I1.sd.m" )]
   TD1 <- merge(TD1, VOT1, by.x = "hour", by.y = "central.hour")
@@ -103,9 +88,9 @@
   TD2 <- merge(TD2, VOT2, by.x = "hour", by.y = "central.hour")
   TD2 <- rename(TD2, c(vot.I2.m="vot"))
   TD2 <- rename(TD2, c(vot.I2.sd.m="vot.se"))
-  
+
   TD <- rbind(TD0, TD1, TD2)
-  
+
   TD <- TD[,c("ID_ORDEM", "vot", "vot.se")]
   write.csv(TD, out.path, row.names=FALSE)
-  
+

@@ -36,17 +36,7 @@
                 "data.table",
                 "reshape")
 
-# function to verify packages and install missing ones ------------------------
-  pkgTest <- function(x)
-  {
-    if (!require(x, character.only = TRUE))
-    {
-      install.packages(x, dep = TRUE)
-      if(!require(x, character.only = TRUE)) stop("Package not found")
-    }
-  }
-
-  # run the function for all required packages
+  # install and load packages
   lapply(packages, pkgTest)
 
 # read data -----------------------------------------------------------------------------------

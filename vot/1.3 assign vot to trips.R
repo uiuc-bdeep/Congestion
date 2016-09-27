@@ -11,45 +11,23 @@
 
 # Prelims -------------------------------------------------------------------------------------
   rm(list=ls())
+  source("environment.R")
 
   # Inputs files:
-    #   vot estimation results
-    #     "stream/vot/extended crawler - vot.csv"
-    # household survey
-    #    "stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv"
+    vot.results <- generatePath("stream/vot/extended crawler - vot.csv")
+    hous.survey_path <- generatePath("stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv")
 
-	source("environment.R")
-
-  # Outputs files:
-    # csv table
+	 # Outputs files:
+  # csv table
 		out.path <- generatePath("intermediate/vot/intermediate store/vot_by_trip.csv")
-
-# Required packages -----------------------------------------------------------
-  packages <- c("stargazer",
-                "ggplot2",
-                "reshape",
-                "data.table")
-
-# function to verify packages and install missing ones ------------------------
-  pkgTest <- function(x)
-  {
-    if (!require(x, character.only = TRUE))
-    {
-      install.packages(x, dep = TRUE)
-      if(!require(x, character.only = TRUE)) stop("Package not found")
-    }
-  }
-
-  # run the function for all required packages
-  lapply(packages, pkgTest)
 
 # read data -----------------------------------------------------------------------------------
 
   # read VOT estimates
-  VOT <- read.csv(generatePath("stream/vot/extended crawler - vot.csv"))
+  VOT <- read.csv(vot.results)
 
   # read data from original household survey
-  HH12 <- read.csv(generatePath("stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv"))
+  HH12 <- read.csv(hous.survey_path)
 
   # subset of trips
   TD <- subset(HH12, TIPOVG >= 0)

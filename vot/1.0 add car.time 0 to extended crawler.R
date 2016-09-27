@@ -11,18 +11,19 @@
 
 # Prelims -------------------------------------------------------------------------------------
   rm(list=ls())
+  source("environment.R")
 
-    # Inputs:
-    #   extended craler .csv files
-    #   (stream/extended-crawler)
-
-	source("environment.R")
+  # Inputs:
+    ext.crawler_path <- generatePath("stream/extended-crawler")
+    
+	 # Outputs:
+    # csv table
+		  out.path <- generatePath("intermediate/vot/intermediate store/Extended Crawler_all.csv")
 
 # merge extended crawler --------------------------------------------------------------------
 
   # list all files in the folder "stream/extended-crawler"
-
-  files <- list.files(path = generatePath("stream/extended-crawler"), full.names = T)
+  files <- list.files(path = ext.crawler_path, full.names = T)
 
   # merge all those files into a single data frame
   DF.o <- do.call(rbind, lapply(files, function(x) read.csv(x, stringsAsFactors = FALSE)))
@@ -52,6 +53,6 @@
    })
 
 # output --------------------------------------------------------------------------------------
-  write.csv(DF.o, generatePath("intermediate/vot/intermediate store/Extended Crawler_all.csv"), row.names=FALSE)
+  write.csv(DF.o, out.path, row.names=FALSE)
 
 

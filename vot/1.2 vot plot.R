@@ -11,37 +11,24 @@
 
 # Prelims -------------------------------------------------------------------------------------
   rm(list=ls())
+  source("environment.R")
 
   # Inputs files:
-    #   vot estimation results
-    #     "stream/vot/extended crawler - vot.csv"
-	source("environment.R")
-
+    vot.results <- generatePath("stream/vot/extended crawler - vot.csv")
+    
+    # required packages
+    packages <- c("ggplot2")
+    # install and load packages
+    lapply(packages, pkgTest)
+	
   # Outputs files:
     # png figure
-		out.path <- generatePath("views/figures/vot/median vot.png")
+	  	out.path <- generatePath("views/figures/vot/median vot.png")
 
-# Required packages
-
-  # required packages
-    packages <- c("ggplot2")
-
-# function to verify packages and install missing ones ------------------------
-  pkgTest <- function(x)
-  {
-    if (!require(x, character.only = TRUE))
-    {
-      install.packages(x, dep = TRUE)
-      if(!require(x, character.only = TRUE)) stop("Package not found")
-    }
-  }
-
-  # run the function for all required packages
-  lapply(packages, pkgTest)
 
 # read data -----------------------------------------------------------------------------------
 
-   df <- read.csv(generatePath("stream/vot/extended crawler - vot.csv"))
+  df <- read.csv(vot.results)
 
   ggplot() +
      geom_point(data = df, aes(y=vot.I1.m, x=central.hour)) +

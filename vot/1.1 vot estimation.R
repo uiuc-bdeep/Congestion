@@ -11,59 +11,44 @@
 
 # Prelims -------------------------------------------------------------------------------------
   rm(list=ls())
+	 source("environment.R")
 
   # Inputs files:
-    #   extended crawler output from script 1.0
-    #     "intermediate/vot/intermediate store/Extended Crawler_all.csv"
-    #   household survey
-    #     "stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv"
+    ext.crawler_path <- generatePath("intermediate/vot/intermediate store/Extended Crawler_all.csv")
+    hous.survey_path <- generatePath("stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv")
 
-	source("environment.R")
+    # Hours evaluated
+    initial.h <- 6
+    final.h <- 7
 
+    # Mode costs
+    transit.fare <- 3   # baseline transit fare
+    walking.cost <- 0   # monetary cost of walking
+
+    # monetary cost per kilometer for cars
+    #   source: Basso et al (2011): http://www.sciencedirect.com/science/article/pii/S0967070X1100014X
+    #   exchange rate: http://usd.lookly.com/Average-Analytics/BRL/
+    CarKmCost <- 0.3804*1.952
+
+    # Required packages
+    packages <- c("stargazer",
+                  "ggplot2",
+                  "mlogit",
+                  "data.table",
+                  "gmnl")
+
+    # install and load packages
+    lapply(packages, pkgTest)
+    
   # Outputs files:
     # csv table
-		out.path <- generatePath("intermediate/vot/intermediate store/extended crawler - vot.csv")
-
+		  out.path <- generatePath("intermediate/vot/intermediate store/extended crawler - vot.csv")
     # tex table
-		out.path2 <- generatePath("views/tables/vot_extended crawler.tex")
+		  out.path2 <- generatePath("views/tables/vot_extended crawler.tex")
 
-  # Input values ------------------------------------------------------------------------------
-  # Hours evaluated
-  initial.h <- 6
-  final.h <- 22
-
-  # Mode costs
-  transit.fare <- 3   # baseline transit fare
-  walking.cost <- 0   # monetary cost of walking
-
-  # monetary cost per kilometer for cars
-  #   source: Basso et al (2011): http://www.sciencedirect.com/science/article/pii/S0967070X1100014X
-  #   exchange rate: http://usd.lookly.com/Average-Analytics/BRL/
-  CarKmCost <- 0.3804*1.952
-
-
-# Required packages -----------------------------------------------------------
-  packages <- c("stargazer",
-                "ggplot2",
-                "mlogit",
-                "data.table",
-                "gmnl")
-
-# function to verify packages and install missing packages -------------------
-  pkgTest <- function(x)
-  {
-    if (!require(x, character.only = TRUE))
-    {
-      install.packages(x, dep = TRUE)
-      if(!require(x, character.only = TRUE)) stop("Package not found")
-    }
-  }
-  # run the function for all required packages
-  lapply(packages, pkgTest)
-
-
-# read and manipulatye data from original household survey ------------------------------------
-  HH12 <- read.csv(generatePath("stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv"))
+  
+# read and manipulate data from original household survey ------------------------------------
+  HH12 <- read.csv(hous.survey_path)
 
   # keep only relevant variables
   hh.vars <- c("ID_ORDEM", "TIPOVG", "MOTIVO_O", "MOTIVO_D", "NO_MORAF",
@@ -102,7 +87,7 @@
     HH12$vehicles <- HH12$QT_MOTO + HH12$QT_AUTO
 
 # read extended crawler -----------------------------------------------------------------------
-  DF.o <- read.csv(generatePath("intermediate/vot/intermediate store/Extended Crawler_all.csv"))
+  DF.o <- read.csv(ext.crawler_path)
 
 
 # run model -----------------------------------------------------------------

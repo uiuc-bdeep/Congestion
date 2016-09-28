@@ -11,51 +11,45 @@
 
 # Prelims -------------------------------------------------------------------------------------
   rm(list=ls())
+  source("environment.R")
 
   # Inputs files:
-    #   vot estimation results by trip
-    #     "stream/vot/vot_by_trip.csv"
-    # household survey
-    #    "stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv"
-    # auxiliary currency convert
-    #    "stores/auxiliary/exchange rates.csv"
-    # normal crawler files
-    #    "stream/normal-crawler"
-
-	source("environment.R")
-
-  # Outputs files:
-    # csv tables
-		out.path <- generatePath("intermediate/vot/travel time and vot - daily.csv")
-		out.path2 <- generatePath("intermediate/vot/travel time and vot - weekly.csv")
-
-# Required packages -----------------------------------------------------------
+    vot.results <- generatePath("intermediate/vot/intermediate store/vot_by_trip.csv")
+    hous.survey_path <- generatePath("stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv")
+    exch.rates <- generatePath("stores/auxiliary/exchange rates.csv")
+    norm.crawler_path <- generatePath("stream/normal-crawler")
+    
+  # Required packages
   packages <- c("stargazer",
                 "ggplot2",
                 "mlogit",
                 "data.table",
                 "reshape")
-
   # install and load packages
   lapply(packages, pkgTest)
+
+  # Outputs files:
+  # csv tables
+		out.path <- generatePath("intermediate/vot/travel time and vot - daily.csv")
+		out.path2 <- generatePath("intermediate/vot/travel time and vot - weekly.csv")
 
 # read data -----------------------------------------------------------------------------------
 
   # read data from original household survey
-  HH12 <- read.csv(generatePath("stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv"))
+  HH12 <- read.csv(hous.survey_path)
 
   # read vot by trip
-  VOT <- read.csv(generatePath("stream/vot/vot_by_trip.csv"))
+  VOT <- read.csv(vot.results)
 
 # convert values to 2012 USD
-  EX <- read.csv(generatePath("stores/auxiliary/exchange rates.csv"))
+  EX <- read.csv(exch.rates)
 
   # Sao Paulo 2012
   HH12_EX <- subset(EX, Date == "28-Dec-12")
   HH12_b2u <- HH12_EX[1,"X"]
 
 # read normal-crawler trips -----------------------------------------------------------------
-  files <- list.files(path = generatePath("stream/normal-crawler"), full.names = T)
+  files <- list.files(path = norm.crawler_path, full.names = T)
 
   # merge all those files into a single data frame
   NC <- do.call(rbind, lapply(files, function(x) read.csv(x, stringsAsFactors = FALSE)))

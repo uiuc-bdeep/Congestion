@@ -1,6 +1,6 @@
 #     ----------------------------------------------------------------------------------------
 #   |                                                                                         |
-#   |  Transportation Mode Discrete Choice Estimation for Sao Paulo 2012                      |
+#   |  Assign vot estimate to each trip                                                       |
 #   |                                                                                         |
 #   |  By:                                                                                    |
 #   |  Renato Schwambach Vieira                                                               |
@@ -14,12 +14,22 @@
   source("environment.R")
 
   # Inputs files:
-    vot.results <- generatePath("stream/vot/extended crawler - vot.csv")
+    vot.results <- generatePath("intermediate/vot/choice model outputs/baseline.csv")
     hous.survey_path <- generatePath("stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv")
 
+    # Hours evaluated
+    initial.h <- 6
+    final.h <- 7
+    
+    # required packages
+    packages <- c("plyr")
+    # install and load packages
+    lapply(packages, pkgTest)
+    
+    
 	 # Outputs files:
   # csv table
-		out.path <- generatePath("intermediate/vot/intermediate store/vot_by_trip.csv")
+		out.path <- generatePath("intermediate/vot/extended-crawler trips/vot_by_trip.csv")
 
 # read data -----------------------------------------------------------------------------------
 
@@ -43,7 +53,7 @@
   TD$hour <- ifelse(TD$MIN_SAIDA > 30,
                     TD$H_SAIDA + 1,
                     TD$H_SAIDA)
-  TD$hour <- ifelse(TD$hour > 20 | TD$hour < 6, 20, TD$hour)
+  TD$hour <- ifelse(TD$hour > final.h | TD$hour < initial.h, final.h, TD$hour)
 
   # Income_Departure.Time ID
   TD$Inc.DepT_ID <- paste(TD$Income.bin, TD$hour, sep = " ")

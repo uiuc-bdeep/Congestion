@@ -18,7 +18,7 @@
     
 	 # Outputs:
     # csv table
-		  out.path <- generatePath("intermediate/vot/intermediate store/Extended Crawler_all.csv")
+		  out.path <- generatePath("intermediate/vot/extended-crawler trips/extended crawler - all.csv")
 
 # merge extended crawler --------------------------------------------------------------------
 

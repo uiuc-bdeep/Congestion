@@ -1,6 +1,6 @@
 #     ------------------------------------------------------------------------
 #   |                                                                         |
-#   |  vot plot                                                               |
+#   |  generates vot plot                                                     |
 #   |                                                                         |
 #   |  By:                                                                    |
 #   |  Renato Schwambach Vieira                                               |
@@ -14,7 +14,12 @@
   source("environment.R")
 
   # Inputs files:
-    vot.results <- generatePath("stream/vot/extended crawler - vot.csv")
+    vot.results <- generatePath("intermediate/vot/choice model outputs/baseline.csv")
+    
+    # Hours evaluated
+    initial.h <- 6
+    final.h <- 7
+    
     
     # required packages
     packages <- c("ggplot2")
@@ -38,7 +43,7 @@
                        x=central.hour),
                    width=0.2) +
      scale_y_continuous(limits = c(0, 25)) +
-     scale_x_continuous(breaks = 6:22) +
+     scale_x_continuous(breaks = final.h:final.h) +
      labs(x = "departure time", y = "Median VOT (R$/hour)") +
      ggtitle("VOT estimation")
   ggsave(file=out.path, width = 8, height = 5)

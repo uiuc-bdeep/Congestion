@@ -22,7 +22,7 @@
     initial.h <- 5
     final.h <- 22
     # Valid normal-crawler weeks
-    w <- c(7,8,9)
+    w <- c(4,5,7,8,9)
   
     # required packages
     packages <- c("plyr")
@@ -32,7 +32,8 @@
     
 	 # Outputs files:
   # csv table
-		out.path <- generatePath("intermediate/vot - b/extended-crawler trips/welfare_by_trip.csv")
+		out.path <- generatePath("intermediate/vot - b/welfare/welfare_by_trip.csv")
+		out.path2 <- generatePath("intermediate/vot - b/welfare/welfare_by_week.csv")
 
 # read data -----------------------------------------------------------------------------------
   # read VOT estimates
@@ -74,7 +75,7 @@
   }
 
   # calculate marginal utility of money
-  TD$MUM <- abs(TD$cost.m + TD$cost.I1.m*TD$I1 + TD$cost.I2.m*TD$I2))
+  TD$MUM <- abs(TD$cost.m + TD$cost.I1.m*TD$I1 + TD$cost.I2.m*TD$I2)
 
 # calculate V (observed utility) --------------------------------------------------------------
     for (i in 1:length(w)){
@@ -119,6 +120,25 @@
                              
     }
   
-  
-  write.csv(TD, out.path, row.names=FALSE)
+  # remove obs with NAs
+  for (i in 1:length(w)){
+  CSW <- paste("CS_",w[i],sep="")
+  TD <- subset(TD, (!is.na(TD[,CSW])))
+  }
 
+  write.csv(TD, out.path, row.names=FALSE)
+  
+
+# weekly aggregates --------------------------------------------------------------
+  week.agg <- matrix(nrow = length(w), ncol = 3)
+  colnames(week.agg) <- c("week",
+                         "car_travel.time",
+                         "welfare")
+  for (i in 1:length(w)){
+   week.agg[i,1] <- w[i]
+   week.agg[i,2] <- sum(TD[,paste("time_w", w[i], sep="")]*TD[,"FE_VIA"])
+   week.agg[i,3] <- sum(TD[,paste("CS_", w[i], sep="")]*TD[,"FE_VIA"])
+    
+  }
+  
+  write.csv(week.agg, out.path2, row.names=FALSE)

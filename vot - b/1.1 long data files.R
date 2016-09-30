@@ -132,7 +132,7 @@
 
     DF$Choice <- DF$mode
 
-    # mode specific "travel time"
+    # mode specific "travel time" (converts to minutes)
     DF$Time.pub <- (DF$public_transit_time_ave)/60
     DF$Time.walk <- (DF$walking_time_ave)/60
     DF$Time.car <- (DF$car_time_ave)/60
@@ -165,7 +165,8 @@
     if (i == initial.h){
     write.csv(DS, paste(out.path2, "wide data.csv", sep =""), row.names = F)
     }
-    # Additional Subseting exclusions
+    
+    # Additional Subseting
     #   travel time > 0
     DS <- subset(DS, Time.pub > 0 &
                      Time.car > 0 &

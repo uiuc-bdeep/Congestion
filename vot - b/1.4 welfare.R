@@ -74,7 +74,7 @@
   }
 
   # calculate marginal utility of money
-  TD$MUM <- with(TD, cost.m + cost.I1.m*I1 + cost.I2.m*I2)
+  TD$MUM <- abs(TD$cost.m + TD$cost.I1.m*TD$I1 + TD$cost.I2.m*TD$I2))
 
 # calculate V (observed utility) --------------------------------------------------------------
     for (i in 1:length(w)){

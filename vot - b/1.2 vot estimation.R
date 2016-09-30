@@ -40,7 +40,7 @@
 # read and manipulate data from original household survey ------------------------------------
 
   # start output matrix
-  results <- matrix(nrow =0, ncol = 18)
+  results <- matrix(nrow =0, ncol = 26)
   colnames(results) <- c("central.hour",
                          "vot.I0", "vot.I1","vot.I2",
                          "time.m",
@@ -48,7 +48,9 @@
                          "time.sd.m",
                          "cost.sd.m", "cost.I1.sd.m", "cost.I2.sd.m",
                          "vot.I0.m", "vot.I1.m", "vot.I2.m",
-                         "vot.I0.sd.m", "vot.I1.sd.m", "vot.I2.sd.m")
+                         "vot.I0.sd.m", "vot.I1.sd.m", "vot.I2.sd.m",
+                         "car_c.m", "pub_c.m", "car_age1.m", "pub_age1.m",
+                         "car_age2.m", "pub_age2.m", "car_f.m", "pub_f.m")
 
   # list of regression outputs
     list.mml <- list()
@@ -83,7 +85,7 @@
                         R = 100, halton = NA,
                         shape = "long", chid.var = "chid",
                         alt.var="alt", choice = "Choice")
-
+      
       # save regression output
       list.mml[[i-initial.h+1]] <- mml.Sim
       list.labels[[i-initial.h+1]] <- paste(i,":00", sep ="")
@@ -91,6 +93,17 @@
       # save regression coefficients
       coefs.m <- as.data.frame(summary(mml.Sim)$CoefTable)
 
+      car_c.m <- coefs.m["car:(intercept)",1]
+      pub_c.m <- coefs.m["pub:(intercept)",1]
+      
+      car_age1.m <- coefs.m["car:age.30_49",1]
+      pub_age1.m <- coefs.m["pub:age.30_49",1]
+      car_age2.m <- coefs.m["car:age.50_99",1]
+      pub_age2.m <- coefs.m["pub:age.50_99",1]
+      
+      car_f.m <- coefs.m["car:female",1]
+      pub_f.m <- coefs.m["pub:female",1]
+      
       time.m <- coefs.m["Time",1]
       cost.m <- coefs.m["Cost",1]
       cost.I1.m <- coefs.m["Cost_I1",1]
@@ -142,7 +155,9 @@
                         time.sd.m,
                         cost.sd.m, cost.I1.sd.m, cost.I2.sd.m,
                         vot.I0.m, vot.I1.m, vot.I2.m,
-                        vot.I0.sd.m, vot.I1.sd.m, vot.I2.sd.m)
+                        vot.I0.sd.m, vot.I1.sd.m, vot.I2.sd.m,
+                        car_c.m, pub_c.m, car_age1.m, pub_age1.m,
+                        car_age2.m, pub_age2.m, car_f.m, pub_f.m)
 
       results <- rbind(results, hour.results)
   }

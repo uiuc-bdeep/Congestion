@@ -44,13 +44,15 @@
   # Outputs files:
     # csv tables
 		  out.path <- generatePath("intermediate/vot - b/extended-crawler trips/long data/")
+		  out.path2 <- generatePath("intermediate/vot - b/extended-crawler trips/wide data/")
+		  
     
   
 # read and manipulate data from original household survey ------------------------------------
   HH12 <- read.csv(hous.survey_path)
 
   # keep only relevant variables
-  hh.vars <- c("ID_ORDEM", "TIPOVG", "MOTIVO_O", "MOTIVO_D", "NO_MORAF",
+  hh.vars <- c("ID_ORDEM", "TIPOVG", "FE_VIA", "MOTIVO_D", "NO_MORAF",
                "QT_MOTO", "QT_AUTO", "RENDA_FA", "IDADE", "SEXO", "DURACAO")
   HH12 <- HH12[hh.vars]
   rm(hh.vars)
@@ -144,7 +146,7 @@
     DS <- DF
 
     # variables required for discrete choice estimation
-    vars <- c("MOTIVO_O", "timestamp_hours", "timestamp_minutes",
+    vars <- c("ID_ORDEM", "FE_VIA", "timestamp_hours", "timestamp_minutes",
               "age.0_29",	"age.30_49",	"age.50_99",
               "I0", "I1", "I2",
               "female", "HH.IpC",
@@ -156,7 +158,13 @@
               "Time.walk", "Cost.walk")
     
     DS <- DS[,vars]
-
+    DS$dep.hour <- ifelse(DS$timestamp_minutes > 30,
+                          DS$timestamp_hours + 1,
+                          DS$timestamp_hours)
+    
+    if (i == initial.h){
+    write.csv(DS, paste(out.path2, "wide data.csv", sep =""), row.names = F)
+    }
     # Additional Subseting exclusions
     #   travel time > 0
     DS <- subset(DS, Time.pub > 0 &
@@ -182,17 +190,13 @@
     DS <- subset(DS, err > -0.5 & err < 0.5)
 
     # Subset by hour
-    DS$dep.hour <- ifelse(DS$timestamp_minutes > 30,
-                          DS$timestamp_hours + 1,
-                          DS$timestamp_hours)
-    
     DS <- subset(DS, dep.hour == i)
 
     # Set Choice variable as factor (so the missing levels are deleted)
     DS$Choice <- factor(DS$Choice)
 
     # Create logit wide dataframe
-    LD <- mlogit.data(DS, shape = "wide", varying = 17:22,
+    LD <- mlogit.data(DS, shape = "wide", varying = 18:23,
                         choice = "Choice", sep = ".")
 
     # convert time from minute to hours
@@ -203,6 +207,7 @@
     LD$Cost_I2 <- (LD$Cost)*(LD$I2)
 
     # Save Data
-    write.csv(LD, paste(out.path, "Long_Data_", i, ".csv", sep =""), row.names=FALSE)  
+    write.csv(LD, paste(out.path, "Long_Data_", i, ".csv", sep =""), row.names=FALSE)
+    
   }
 

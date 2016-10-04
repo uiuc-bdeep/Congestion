@@ -23,6 +23,7 @@ Rscript "$SCRIPTS/1.5 week aggregation.R"
 
 cp -r views analysis/
 cp "intermediate/vot/travel time and vot - weekly.csv" analysis/weekly-vot.csv
+cp "intermediate/vot/travel time and vot - weekly.csv" weekly-vot/weekly-vot.csv
 
 tar -czf analysis.tar.gz analysis
 cp analysis.tar.gz analysis/

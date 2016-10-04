@@ -22,7 +22,7 @@ Rscript "$SCRIPTS/1.4 assign vot to trips.R"
 Rscript "$SCRIPTS/1.5 week aggregation.R"
 
 cp -r views analysis/
-cp "intermediate/vot/travel time and vot - weekly.csv" analysis/
+cp "intermediate/vot/travel time and vot - weekly.csv" analysis/weekly.csv
 
 tar -czf analysis.tar.gz analysis
 cp analysis.tar.gz analysis/

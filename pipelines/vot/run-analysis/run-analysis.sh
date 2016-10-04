@@ -12,6 +12,8 @@ SCRIPTS=$PWD/repo/vot
 
 env
 
+cp $SCRIPTS/environment.R .
+
 Rscript "$SCRIPTS/1.0 add car.time 0 to extended crawler.R"
 Rscript "$SCRIPTS/1.1 long data files.R"
 Rscript "$SCRIPTS/1.2 vot estimation.R"

@@ -30,7 +30,7 @@
       }
     </style>
 
-<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="https://d3js.org/d3.v3.min.js"></script>
 <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
 <script>
 // plot a graph of miles vs. time
@@ -143,11 +143,12 @@ function milesovertime(csvdata) {
       .on('mouseout', tip.hide);
 }
 // Read in .csv data and make graph
-d3.csv("vot.csv", parser,
+var csvLocation = "https://s3.amazonaws.com/bdeep-concourse/VOT/weekly-vot.csv"
+d3.csv(csvLocation, parser,
        function(error, csvdata) {
        milesovertime(csvdata);
-}); 
-    
+});
+
 </script>
     <div id="miles" class="graph"></div>
   </body>

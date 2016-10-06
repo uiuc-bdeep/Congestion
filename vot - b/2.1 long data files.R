@@ -18,7 +18,7 @@
     hous.survey_path <- generatePath("stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv")
 
     # Hours evaluated
-    initial.h <- 5
+    initial.h <- 6
     final.h <- 22
 
     # Mode costs
@@ -46,8 +46,6 @@
 		  out.path <- generatePath("intermediate/vot - b/extended-crawler trips/long data/")
 		  out.path2 <- generatePath("intermediate/vot - b/extended-crawler trips/wide data/")
 		  
-    
-  
 # read and manipulate data from original household survey ------------------------------------
   HH12 <- read.csv(hous.survey_path)
 
@@ -103,13 +101,38 @@
     ec.vars <- c("trip_id",	"timestamp_day",	"timestamp_hours",
                  "timestamp_minutes",	"walking_time",
                  "public_transit_time", "Time.car", "Distance.car")
+    
+    m.lab <- c("_00","_20","_40")
+    
+    # create Time.car and Cost.car labels
+    ec.car_vars_time <- ""
+    for (h in (i-2):(i+1)){
+      for (m in 1:3){
+        ec.car_vars_time <- c(ec.car_vars_time, paste("Time.car", h, m.lab[m], sep =""))
+      }
+    }
+    ec.car_vars_time <- ec.car_vars_time[2:length(ec.car_vars_time)]
 
-    DF.ec <- DF.ec[,ec.vars]
+    ec.car_vars_cost <- ""
+    for (h in (i-2):(i+1)){
+      for (m in 1:3){
+        ec.car_vars_cost <- c(ec.car_vars_cost, paste("Cost.car", h, m.lab[m], sep =""))
+      }
+    }
+    ec.car_vars_cost <- ec.car_vars_cost[2:length(ec.car_vars_cost)]
+    
+    
+    # Calculate times
+    DF.ec <- DF.ec[,c(ec.vars,ec.car_vars_time)]
     
     # substitute errors and 0s with NA
     DF.ec$walking_time[DF.ec$walking_time <= 0] <- NA
     DF.ec$public_transit_time[DF.ec$public_transit_time <= 0] <- NA
     DF.ec$Time.car[DF.ec$Time.car <= 0] <- NA
+    
+    DF.car <- DF.ec[,ec.car_vars_time]
+    DF.car[DF.car <= 0] <- NA
+    DF.ec[,ec.car_vars_time] <- DF.car
     
     # take average of observed times
     DF.ec$walking_time_ave <- ave(DF.ec$walking_time, DF.ec$trip_id,
@@ -117,9 +140,17 @@
     DF.ec$public_transit_time_ave <- ave(DF.ec$public_transit_time, DF.ec$trip_id,
                                          FUN=function(x) mean(x, na.rm=T))
     DF.ec$car_time_ave <- ave(DF.ec$Time.car, DF.ec$trip_id,
-                                         FUN=function(x) mean(x, na.rm=T))
+                              FUN=function(x) mean(x, na.rm=T))
+    for (h in (i-2):(i+1)){
+      for (m in 1:3){
+        DF.ec[,paste("time", h, m.lab[m], "_ave", sep ="")] <- ave(DF.ec[,paste("Time.car", h , m.lab[m], sep ="")],
+                                                                   DF.ec$trip_id,
+                                                                   FUN=function(x) mean(x, na.rm=T))
+      }
+    }
+    
     DF.ec$car_dist_ave <- ave(DF.ec$Distance.car, DF.ec$trip_id,
-                                         FUN=function(x) mean(x, na.rm=T))
+                              FUN=function(x) mean(x, na.rm=T))
     
     # remove repeated observations
     DF.ec <- DF.ec[!duplicated(DF.ec$trip_id), ]
@@ -130,18 +161,39 @@
     
  # Manipulate original data
 
-    DF$Choice <- DF$mode
+    # create the Choice variable in the format modeH_MM
+    DF$min_bin <- ifelse(DF$timestamp_minutes < 20, "_00",
+                  ifelse(DF$timestamp_minutes < 40, "_20",
+                  ifelse(DF$timestamp_minutes < 60, "_40")))
+
+    DF$Choice <- ifelse(DF$mode == "car",
+                        paste(DF$mode, DF$timestamp_hours, DF$min_bin, sep = ""),
+                        DF$mode)
+    
 
     # mode specific "travel time" (converts to minutes)
     DF$Time.pub <- (DF$public_transit_time_ave)/60
     DF$Time.walk <- (DF$walking_time_ave)/60
     DF$Time.car <- (DF$car_time_ave)/60
+    for (h in (i-2):(i+1)){
+      DF[,paste("Time.car",h,"_00", sep ="")] <- DF[,paste("time",h,"_00_ave", sep ="")]/60
+      DF[,paste("Time.car",h,"_20", sep ="")] <- DF[,paste("time",h,"_20_ave", sep ="")]/60
+      DF[,paste("Time.car",h,"_40", sep ="")] <- DF[,paste("time",h,"_40_ave", sep ="")]/60
+    }
+
+
 
     # mode specific "cost"
     DF$Cost.pub <- transit.fare
     DF$Cost.walk <- walking.cost
-    DF$Cost.car <- 5 + (DF$car_dist_ave/1000)*CarKmCost
-
+    DF$Cost.car <- 5 + (DF$Distance.car/1000)*CarKmCost
+    for (h in (i-2):(i+1)){
+      DF[,paste("Cost.car",h,"_00", sep ="")] <- 5 + (DF$Distance.car/1000)*CarKmCost
+      DF[,paste("Cost.car",h,"_20", sep ="")] <- 5 + (DF$Distance.car/1000)*CarKmCost
+      DF[,paste("Cost.car",h,"_40", sep ="")] <- 5 + (DF$Distance.car/1000)*CarKmCost
+    }
+    
+    
     # Creates subset dataframe
     DS <- DF
 
@@ -157,14 +209,13 @@
               "Time.pub", "Cost.pub",
               "Time.walk", "Cost.walk")
     
-    DS <- DS[,vars]
+    DS <- DS[,c(vars, ec.car_vars_time, ec.car_vars_cost)]
     DS$dep.hour <- ifelse(DS$timestamp_minutes > 30,
                           DS$timestamp_hours + 1,
                           DS$timestamp_hours)
     
-    if (i == initial.h){
-    write.csv(DS, paste(out.path2, "wide data.csv", sep =""), row.names = F)
-    }
+    write.csv(DS, paste(out.path2, "wide data - ", i, ".csv", sep =""), row.names = F)
+    
     
     # Additional Subseting
     #   travel time > 0
@@ -190,16 +241,17 @@
     # Subset where err <50%
     DS <- subset(DS, err > -0.5 & err < 0.5)
 
-    # Subset by hour
-    DS <- subset(DS, dep.hour == i)
+    # Subset where choice within range
+    DS <- subset(DS, timestamp_hours < i+2 & timestamp_hours > i-3)
 
     # Set Choice variable as factor (so the missing levels are deleted)
     DS$Choice <- factor(DS$Choice)
 
     # Create logit wide dataframe
-    LD <- mlogit.data(DS, shape = "wide", varying = 18:23,
+    LD <- mlogit.data(DS, shape = "wide", varying = 20:47,
                         choice = "Choice", sep = ".")
-
+    
+    LD <- LD[!is.nan(LD$Time),]
     # convert time from minute to hours
     LD$Time <- (LD$Time)/60
 

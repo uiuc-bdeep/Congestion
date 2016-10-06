@@ -17,7 +17,7 @@
     vot.results <- generatePath("intermediate/vot - b/choice model outputs/baseline.csv")
     
     # Hours evaluated
-    initial.h <- 5
+    initial.h <- 6
     final.h <- 22
     
     

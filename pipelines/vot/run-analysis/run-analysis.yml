@@ -12,6 +12,7 @@ inputs:
 
 outputs:
 - name: analysis
+- name: weekly-vot
 
 run:
   path: repo/pipelines/vot/run-analysis/run-analysis.sh

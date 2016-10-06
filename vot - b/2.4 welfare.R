@@ -369,9 +369,7 @@ for(i in 1:nrow(dept)){
   TD$FE.w <- ave(TD$FE_VIA, TD$weeks, FUN = sum)
   TD$FE.w_factor <- TD$FE.w/(FE_week/5)
   TW <- TD[!duplicated(TD$weeks), ]
-  TW <- subset(TW, weeks %in% w)
   TW <- TW[order(TW$weeks),] 
-  TW$CS.w <- TW$CS.w - TW$CS.w[1]
   TW <- TW[,c("weeks", "CS.w", "FE.w","FE.w_factor")]
   TW$CS.w <- (TW$CS.w/TW$FE.w_factor)
   write.csv(TW, out.path2, row.names=FALSE)

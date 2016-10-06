@@ -21,7 +21,7 @@
     # install and load packages
     lapply(packages, pkgTest)
 	   # Valid normal-crawler weeks
-    w <- c(2,3,4,10,11,12,13)
+    w <- c(1:13)
     
     
   # Outputs files:
@@ -32,7 +32,9 @@
 # read data -----------------------------------------------------------------------------------
 
   df <- read.csv(welfare.results)
-	 df$CS.w <-df$CS.w/1000000
+	 df$CS.w <- df$CS.w/1000000
+	 df <- subset(df, weeks %in% w)
+	 df$CS.w <- df$CS.w - df$CS.w[1]
   ggplot() +
      geom_point(data = df, aes(y=CS.w, x=weeks)) +
      geom_line(data = df, aes(y=CS.w, x=weeks)) +

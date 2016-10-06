@@ -21,7 +21,7 @@
     # install and load packages
     lapply(packages, pkgTest)
 	   # Valid normal-crawler weeks
-    w <- c(4,5,7,8,9)
+    w <- c(2,3,4,10,11,12,13)
     
     
   # Outputs files:
@@ -32,10 +32,10 @@
 # read data -----------------------------------------------------------------------------------
 
   df <- read.csv(welfare.results)
-  df$welfare.variation <- (df$welfare - df$welfare[1])/1000000
+	 df$CS.w <-df$CS.w/1000000
   ggplot() +
-     geom_point(data = df, aes(y=welfare.variation, x=week)) +
-     geom_line(data = df, aes(y=welfare.variation, x=week)) +
+     geom_point(data = df, aes(y=CS.w, x=weeks)) +
+     geom_line(data = df, aes(y=CS.w, x=weeks)) +
      scale_x_continuous(breaks = w[1]:w[length(w)]) +
      labs(x = "week", y = "(R$ Millions)") +
      ggtitle("Welfare Variation per Week") +

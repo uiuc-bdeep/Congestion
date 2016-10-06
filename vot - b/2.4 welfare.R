@@ -15,16 +15,23 @@
 
   # Inputs files:
     vot.results <- generatePath("intermediate/vot - b/choice model outputs/baseline.csv")
-    wide.data <- generatePath("intermediate/vot - b/extended-crawler trips/wide data/")
-    norm.crawler_path <- generatePath("stream/normal-crawler")
+    ext.crawler <- generatePath("intermediate/vot - b/extended-crawler trips/extended crawler - all.csv")
     cs_path <- generatePath("intermediate/vot - b/welfare/welfare_by_hour/")
+    hous.survey_path <- generatePath("stores/household survey/Sao Paulo 2012/Mobilidade_2012_v2.csv")
+    dept <- generatePath("stores/auxiliary/dept.csv")
+    
     
     # Hours evaluated
     initial.h <- 6
     final.h <- 22
     # Valid normal-crawler weeks
-    w <- c(4,5,7,8,9,10)
-  
+    w <- c(2,3,4,10,11,12,13)
+    
+    # monetary cost per kilometer for cars
+    #   source: Basso et al (2011): http://www.sciencedirect.com/science/article/pii/S0967070X1100014X
+    #   exchange rate: http://usd.lookly.com/Average-Analytics/BRL/
+    CarKmCost <- 0.3804*1.952
+    
     # required packages
     packages <- c("plyr")
     # install and load packages
@@ -41,59 +48,66 @@
   # read VOT estimates
   VOT <- read.csv(vot.results)
 
-  # read Normal crawler
-  files <- list.files(path = norm.crawler_path, full.names = T)
-  NC <- do.call(rbind, lapply(files, function(x) read.csv(x, stringsAsFactors = FALSE)))
-  rm(files)
+		# HOusehold Survey
+		HH12 <- read.csv(hous.survey_path)
+
+  # keep only relevant variables
+  hh.vars <- c("ID_ORDEM", "TIPOVG", "FE_VIA", "MOTIVO_D", "NO_MORAF",
+               "QT_MOTO", "QT_AUTO", "RENDA_FA", "IDADE", "SEXO", "DURACAO")
+  HH12 <- HH12[hh.vars]
+  rm(hh.vars)
   
+  HH12$FE_VIA[is.na(HH12$FE_VIA)] <- 0
+  FE_week <- sum(HH12$FE_VIA)*5
+  # read ext crawler
+  EC <- read.csv(ext.crawler)
   
-for (h in initial.h:final.h){
+  EC <- merge(EC, HH12, by.x = "trip_id", by.y = "ID_ORDEM")
+  # keep only valid crawls
+  EC <- subset(EC, walking_time > 0 & biking_time > 0 & Time.car > 0)
   
-  # read extended crawler aggregate
-  WD <- read.csv(paste(wide.data,"wide data - ", h, ".csv", sep = ""))
-  WD <- subset(WD, dep.hour == h)
+  #add data -----------------------------------------------------------------------------------
+  # create age bins
+  EC$age.0_29 <- ifelse(EC$IDADE < 30, 1,0)
+  EC$age.30_49 <- ifelse(EC$IDADE < 50 & EC$IDADE >= 30, 1, 0)
+  EC$age.50_99 <- ifelse(EC$IDADE >= 50, 1, 0)
+
+  # Household income per capita
+  EC$HH.IpC <- EC$RENDA_FA/EC$NO_MORAF
+
+  # create income bins
+  EC$I0 <- ifelse(EC$HH.IpC <= 500, 1,0)
+  EC$I1 <- ifelse(EC$HH.IpC <= 1500 & EC$HH.IpC > 500, 1, 0)
+  EC$I2 <- ifelse(EC$HH.IpC > 1500, 1, 0)
+
+  # creates female dummy
+  EC$female <- EC$SEXO - 1
+
+  # calculates dep.hour
+  EC$dep.hour <- ifelse(EC$timestamp_minutes > 30,
+                        EC$timestamp_hours + 1,
+                        EC$timestamp_hours)
   
 # Discrete choice results -------------------------------------------------------------------
   
-  TD <- merge(WD, VOT, by.x = "dep.hour", by.y = "central.hour")
-
-# Normal-crawler data -------------------------------------------------------------------------
-  # keep only valid crawls
-  NCp <- subset(NC, traffic > 0)
-
-  for (i in 1:length(w)){
-    # subset to a particular week
-    NCps <- subset(NCp, weeks == w[i])
-
-    # add travel time (convert to minutes)
-    NCps[,paste("time_w",w[i],sep="")] <- (NCps$traffic)/60
-    NCps <- NCps[,c("trip_id", paste("time_w",w[i],sep=""))]
-
-    # merge to Household data
-    TD <- merge(TD, NCps, by.x = "ID_ORDEM", by.y = "trip_id")
-   
-    w.i <- paste("time_w", w[i], sep = "") 
-    # set non positive travel time to NA
-    TD[,w.i] <- ifelse(TD[,w.i] <= 0, NA, TD[,w.i])
-  }
-
+  TD <- merge(EC, VOT, by.x = "dep.hour", by.y = "central.hour")
+  
   # calculate marginal utility of money
   TD$MUM <- abs(TD$cost.m + TD$cost.I1.m*TD$I1 + TD$cost.I2.m*TD$I2)
-
+  
+  
 # calculate V (observed utility) --------------------------------------------------------------
   # baseline V
-  TD$Time.car_base <- TD[,paste("time_w", w[1], sep ="")]
   
-  for (i in 1:length(w)){
-  
-  TD$Time.car_w <- TD[,paste("time_w", w[i], sep ="")]
-  TD$time.car_var <-  TD$Time.car_w/TD$Time.car_base
-    
-  
+  TD$Cost.walk <- 0
+  TD$Time.walk <- TD$walking_time/60
   TD$V_walk <- with(TD, cost.m*Cost.walk +
                         cost.I1.m*Cost.walk*I1 +
                         cost.I2.m*Cost.walk*I2 +
                         time.m*Time.walk/60)
+  
+  TD$Cost.pub <- 3
+  TD$Time.pub <- TD$public_transit_time/60
   TD$V_pub <- with(TD,
                    pub_c.m +
                    cost.m*Cost.pub +
@@ -104,9 +118,90 @@ for (h in initial.h:final.h){
                    pub_age2.m*age.50_99 +
                    pub_f.m*female)
   
-# car V ---------------------------------------------------------------------------------------
-  TD$Cost.car.6l <- TD[,paste("Cost.car", h-2, "_00", sep = "")]
-  TD$Time.car.6l <- TD[,paste("Time.car", h-2, "_00", sep = "")]*TD$time.car_var
+# V ---------------------------------------------------------------------------------------
+ # create the Choice variable in the format modeH_MM
+  TD$min_bin <- ifelse(TD$timestamp_minutes < 20, "_00",
+                ifelse(TD$timestamp_minutes < 40, "_20",
+                ifelse(TD$timestamp_minutes < 60, "_40")))
+
+  TD$dep.time <- paste(TD$timestamp_hours, TD$min_bin, sep = "")
+  dept <- read.csv(dept)
+ 
+  TD <- merge(TD, dept, by = "dep.time")
+ 
+  for(i in 1:nrow(dept)){
+  TDD <- subset(TD, dep.time == dept$dep.time[i])
+  
+  TDD$Distance.car.6l <- TDD[,paste("Distance.car", dept$l6l[i], sep ="")]
+  TDD$Distance.car.5l <- TDD[,paste("Distance.car", dept$l5l[i], sep ="")]
+  TDD$Distance.car.4l <- TDD[,paste("Distance.car", dept$l4l[i], sep ="")]
+  
+  TDD$Distance.car.3l <- TDD[,paste("Distance.car", dept$l3l[i], sep ="")]
+  TDD$Distance.car.2l <- TDD[,paste("Distance.car", dept$l2l[i], sep ="")]
+  TDD$Distance.car.1l <- TDD[,paste("Distance.car", dept$l1l[i], sep ="")]
+  
+  TDD$Distance.car.0l <- TDD[,paste("Distance.car", dept$l0l[i], sep ="")]
+  TDD$Distance.car.1m <- TDD[,paste("Distance.car", dept$l1m[i], sep ="")]
+  TDD$Distance.car.2m <- TDD[,paste("Distance.car", dept$l2m[i], sep ="")]
+  
+  TDD$Distance.car.3m <- TDD[,paste("Distance.car", dept$l3m[i], sep ="")]
+  TDD$Distance.car.4m <- TDD[,paste("Distance.car", dept$l4m[i], sep ="")]
+  TDD$Distance.car.5m <- TDD[,paste("Distance.car", dept$l5m[i], sep ="")]
+  
+  if(i == 1){
+  FD <- TDD 
+  } else {
+   FD <- rbind(FD,TDD)
+   }
+}
+  
+  TD <- FD
+  
+  TD$Cost.car.6l <- 5 + (TD$Distance.car.6l/1000)*CarKmCost
+  TD$Cost.car.5l <- 5 + (TD$Distance.car.5l/1000)*CarKmCost
+  TD$Cost.car.4l <- 5 + (TD$Distance.car.4l/1000)*CarKmCost
+  
+  TD$Cost.car.3l <- 5 + (TD$Distance.car.3l/1000)*CarKmCost
+  TD$Cost.car.2l <- 5 + (TD$Distance.car.2l/1000)*CarKmCost
+  TD$Cost.car.1l <- 5 + (TD$Distance.car.1l/1000)*CarKmCost
+  
+  TD$Cost.car.0l <- 5 + (TD$Distance.car.0l/1000)*CarKmCost
+  TD$Cost.car.1m <- 5 + (TD$Distance.car.1m/1000)*CarKmCost
+  TD$Cost.car.2m <- 5 + (TD$Distance.car.2m/1000)*CarKmCost
+  
+  TD$Cost.car.3m <- 5 + (TD$Distance.car.3m/1000)*CarKmCost
+  TD$Cost.car.4m <- 5 + (TD$Distance.car.4m/1000)*CarKmCost
+  TD$Cost.car.5m <- 5 + (TD$Distance.car.5m/1000)*CarKmCost
+  
+  
+for(i in 1:nrow(dept)){
+  TDD <- subset(TD, dep.time == dept$dep.time[i])
+  
+  TDD$Time.car.6l <- TDD[,paste("Time.car", dept$l6l[i], sep ="")]
+  TDD$Time.car.5l <- TDD[,paste("Time.car", dept$l5l[i], sep ="")]
+  TDD$Time.car.4l <- TDD[,paste("Time.car", dept$l4l[i], sep ="")]
+  
+  TDD$Time.car.3l <- TDD[,paste("Time.car", dept$l3l[i], sep ="")]
+  TDD$Time.car.2l <- TDD[,paste("Time.car", dept$l2l[i], sep ="")]
+  TDD$Time.car.1l <- TDD[,paste("Time.car", dept$l1l[i], sep ="")]
+  
+  TDD$Time.car.0l <- TDD[,paste("Time.car", dept$l0l[i], sep ="")]
+  TDD$Time.car.1m <- TDD[,paste("Time.car", dept$l1m[i], sep ="")]
+  TDD$Time.car.2m <- TDD[,paste("Time.car", dept$l2m[i], sep ="")]
+  
+  TDD$Time.car.3m <- TDD[,paste("Time.car", dept$l3m[i], sep ="")]
+  TDD$Time.car.4m <- TDD[,paste("Time.car", dept$l4m[i], sep ="")]
+  TDD$Time.car.5m <- TDD[,paste("Time.car", dept$l5m[i], sep ="")]
+  
+  if(i == 1){
+  FD <- TDD 
+  } else {
+   FD <- rbind(FD,TDD)
+   }
+}
+  
+  TD <- FD
+  
   TD$V_car.6l <- with(TD,
                       car.6l_c.m +
                       cost.m*Cost.car.6l +
@@ -118,8 +213,6 @@ for (h in initial.h:final.h){
                       car.6l_f.m*female)
   TD$V_car.6l[is.na(TD$V_car.6l)] <- 0
   
-  TD$Cost.car.5l <- TD[,paste("Cost.car", h-2, "_20", sep = "")]
-  TD$Time.car.5l <- TD[,paste("Time.car", h-2, "_20", sep = "")]*TD$time.car_var
   TD$V_car.5l <- with(TD,
                       car.5l_c.m +
                       cost.m*Cost.car.5l +
@@ -131,8 +224,6 @@ for (h in initial.h:final.h){
                       car.5l_f.m*female)
   TD$V_car.5l[is.na(TD$V_car.5l)] <- 0
   
-  TD$Cost.car.4l <- TD[,paste("Cost.car", h-2, "_40", sep = "")]
-  TD$Time.car.4l <- TD[,paste("Time.car", h-2, "_40", sep = "")]*TD$time.car_var
   TD$V_car.4l <- with(TD,
                       car.4l_c.m +
                       cost.m*Cost.car.4l +
@@ -145,14 +236,6 @@ for (h in initial.h:final.h){
   TD$V_car.4l[is.na(TD$V_car.4l)] <- 0
   
    
-  
-  
-  
-  
-  
-  
-  TD$Cost.car.3l <- TD[,paste("Cost.car", h-1, "_00", sep = "")]
-  TD$Time.car.3l <- TD[,paste("Time.car", h-1, "_00", sep = "")]*TD$time.car_var
   TD$V_car.3l <- with(TD,
                       car.3l_c.m +
                       cost.m*Cost.car.3l +
@@ -164,8 +247,6 @@ for (h in initial.h:final.h){
                       car.3l_f.m*female)
   TD$V_car.3l[is.na(TD$V_car.3l)] <- 0
   
-  TD$Cost.car.2l <- TD[,paste("Cost.car", h-1, "_20", sep = "")]
-  TD$Time.car.2l <- TD[,paste("Time.car", h-1, "_20", sep = "")]*TD$time.car_var
   TD$V_car.2l <- with(TD,
                       car.2l_c.m +
                       cost.m*Cost.car.2l +
@@ -177,8 +258,6 @@ for (h in initial.h:final.h){
                       car.2l_f.m*female)
   TD$V_car.2l[is.na(TD$V_car.2l)] <- 0
   
-  TD$Cost.car.1l <- TD[,paste("Cost.car", h-1, "_40", sep = "")]
-  TD$Time.car.1l <- TD[,paste("Time.car", h-1, "_40", sep = "")]*TD$time.car_var
   TD$V_car.1l <- with(TD,
                       car.1l_c.m +
                       cost.m*Cost.car.1l +
@@ -190,17 +269,6 @@ for (h in initial.h:final.h){
                       car.1l_f.m*female)
   TD$V_car.1l[is.na(TD$V_car.1l)] <- 0
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  TD$Cost.car.0l <- TD[,paste("Cost.car", h, "_00", sep = "")]
-  TD$Time.car.0l <- TD[,paste("Time.car", h, "_00", sep = "")]*TD$time.car_var
   TD$V_car.0l <- with(TD,
                       car.0l_c.m +
                       cost.m*Cost.car.0l +
@@ -213,8 +281,6 @@ for (h in initial.h:final.h){
   TD$V_car.0l[is.na(TD$V_car.0l)] <- 0
   
   
-  TD$Cost.car.1m <- TD[,paste("Cost.car", h, "_20", sep = "")]
-  TD$Time.car.1m <- TD[,paste("Time.car", h, "_20", sep = "")]*TD$time.car_var
   TD$V_car.1m <- with(TD,
                       car.1m_c.m +
                       cost.m*Cost.car.1m +
@@ -226,8 +292,6 @@ for (h in initial.h:final.h){
                       car.1m_f.m*female)
   TD$V_car.1m[is.na(TD$V_car.1m)] <- 0
   
-  TD$Cost.car.2m <- TD[,paste("Cost.car", h, "_40", sep = "")]
-  TD$Time.car.2m <- TD[,paste("Time.car", h, "_40", sep = "")]*TD$time.car_var
   TD$V_car.2m <- with(TD,
                       car.2m_c.m +
                       cost.m*Cost.car.2m +
@@ -239,16 +303,6 @@ for (h in initial.h:final.h){
                       car.2m_f.m*female)
   TD$V_car.2m[is.na(TD$V_car.2m)] <- 0
   
-  
-  
-  
-  
-  
-  
-  
-  
-  TD$Cost.car.3m <- TD[,paste("Cost.car", h+1, "_00", sep = "")]
-  TD$Time.car.3m <- TD[,paste("Time.car", h+1, "_00", sep = "")]*TD$time.car_var
   TD$V_car.3m <- with(TD,
                       car.3m_c.m +
                       cost.m*Cost.car.3m +
@@ -260,8 +314,6 @@ for (h in initial.h:final.h){
                       car.3m_f.m*female)
   TD$V_car.3m[is.na(TD$V_car.3m)] <- 0
   
-  TD$Cost.car.4m <- TD[,paste("Cost.car", h+1, "_20", sep = "")]
-  TD$Time.car.4m <- TD[,paste("Time.car", h+1, "_20", sep = "")]*TD$time.car_var
   TD$V_car.4m <- with(TD,
                       car.4m_c.m +
                       cost.m*Cost.car.4m +
@@ -273,8 +325,6 @@ for (h in initial.h:final.h){
                       car.4m_f.m*female)
   TD$V_car.4m[is.na(TD$V_car.4m)] <- 0
   
-  TD$Cost.car.5m <- TD[,paste("Cost.car", h+1, "_40", sep = "")]
-  TD$Time.car.5m <- TD[,paste("Time.car", h+1, "_40", sep = "")]*TD$time.car_var
   TD$V_car.5m <- with(TD,
                       car.5m_c.m +
                       cost.m*Cost.car.5m +
@@ -287,11 +337,9 @@ for (h in initial.h:final.h){
   TD$V_car.5m[is.na(TD$V_car.5m)] <- 0
   
   
-  
 # cs ------------------------------------------------------------------------------------------
   
-    CS_week <- paste("CS_", w[i], sep ="")
-    TD[,CS_week] <- ((log(exp(TD[,"V_pub"])+
+    TD$CS <- ((log(exp(TD[,"V_pub"])+
                           exp(TD[,"V_walk"])+
                           exp(TD[,"V_car.6l"])+
                           exp(TD[,"V_car.5l"])+
@@ -304,38 +352,26 @@ for (h in initial.h:final.h){
                           exp(TD[,"V_car.2m"])+
                           exp(TD[,"V_car.3m"])+
                           exp(TD[,"V_car.4m"])+
-                          exp(TD[,"V_car.5m"])))/(TD$MUM))*TD$FE_VIA
+                          exp(TD[,"V_car.5m"])))/(TD$MUM))*TD$FE_VIA*5
                              
-                             
-    }
+  
   
   # remove obs with NAs
-  for (i in 1:length(w)){
-  CSW <- paste("CS_",w[i],sep="")
-  TD <- subset(TD, (!is.na(TD[,CSW])))
-  }
-  cs_weeks <- c(paste("CS_", w, sep =""))
-  TDH <- TD[,c("ID_ORDEM", cs_weeks)]
+  TD <- subset(TD, (!is.na(TD$CS)))
   
-  a <- 
-  write.csv(TDH, paste(out.path, "hour - ", h, ".csv", sep = ""), row.names=FALSE)
-}
-
-# aggregate all trips in a single file ------------------------------------------------------------
+  # welfare by trip file
+  TDH <- TD
+  write.csv(TDH[,c("trip_id", "CS", "FE_VIA")], out.path1, row.names=FALSE)
   
-  files <- list.files(path = cs_path, full.names = T)
-  CS <- do.call(rbind, lapply(files, function(x) read.csv(x, stringsAsFactors = FALSE)))
-  rm(files)
-  write.csv(TDH, out.path1, row.names=FALSE)
   
-# weekly aggregates --------------------------------------------------------------
-  week.agg <- matrix(nrow = length(w), ncol = 2)
-  colnames(week.agg) <- c("week",
-                         "welfare")
-  for (i in 1:length(w)){
-   week.agg[i,1] <- w[i]
-   week.agg[i,2] <- sum(CS[,paste("CS_", w[i], sep="")]) - sum(CS[,paste("CS_", w[1], sep="")])
-    
-  }
-  
-  write.csv(week.agg, out.path2, row.names=FALSE)
+  # aggregate by week
+  TD$CS.w <- ave(TD$CS, TD$weeks, FUN = sum)
+  TD$FE.w <- ave(TD$FE_VIA, TD$weeks, FUN = sum)
+  TD$FE.w_factor <- TD$FE.w/(FE_week/5)
+  TW <- TD[!duplicated(TD$weeks), ]
+  TW <- subset(TW, weeks %in% w)
+  TW <- TW[order(TW$weeks),] 
+  TW$CS.w <- TW$CS.w - TW$CS.w[1]
+  TW <- TW[,c("weeks", "CS.w", "FE.w","FE.w_factor")]
+  TW$CS.w <- (TW$CS.w/TW$FE.w_factor)
+  write.csv(TW, out.path2, row.names=FALSE)

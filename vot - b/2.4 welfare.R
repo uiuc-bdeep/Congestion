@@ -42,6 +42,7 @@
   # csv table
 		out.path <- generatePath("intermediate/vot - b/welfare/welfare_by_hour/")
 		out.path1 <- generatePath("intermediate/vot - b/welfare/welfare_by_trip.csv")
+		out.path1.5 <- generatePath("intermediate/vot - b/welfare/welfare_by_trip - all.csv")
 		out.path2 <- generatePath("intermediate/vot - b/welfare/welfare_by_week.csv")
 
 # read data -----------------------------------------------------------------------------------
@@ -53,7 +54,8 @@
 
   # keep only relevant variables
   hh.vars <- c("ID_ORDEM", "TIPOVG", "FE_VIA", "MOTIVO_D", "NO_MORAF",
-               "QT_MOTO", "QT_AUTO", "RENDA_FA", "IDADE", "SEXO", "DURACAO")
+               "QT_MOTO", "QT_AUTO", "RENDA_FA", "IDADE", "SEXO", "DURACAO",
+               "ID_PESS")
   HH12 <- HH12[hh.vars]
   rm(hh.vars)
   
@@ -359,17 +361,48 @@ for(i in 1:nrow(dept)){
   # remove obs with NAs
   TD <- subset(TD, (!is.na(TD$CS)))
   
+  # Calculate time
+  TD$time <- ifelse(TD$TIPOVG == 1, TD$Time.pub,
+             ifelse(TD$TIPOVG == 2, TD$Time.car.0l/60,
+             ifelse(TD$TIPOVG == 3, TD$Time.walk, NA)))
+  TD$distance <- ifelse(TD$TIPOVG == 1, TD$public_transit_distance,
+                 ifelse(TD$TIPOVG == 2, TD$Distance.car.0l,
+                 ifelse(TD$TIPOVG == 3, TD$walking_distance , NA)))
+  TD$distance <- TD$distance/1000
+  
+  TD$time <- TD$time/60
+  TD$speed <- TD$distance/TD$time
+  
+  TD <- subset(TD, (!is.na(TD$time)))
+  TD <- subset(TD, (!is.na(TD$distance)))
+  TD <- subset(TD, time > 0 & distance > 0)
+  
   # welfare by trip file
   TDH <- TD
-  write.csv(TDH[,c("trip_id", "CS", "FE_VIA")], out.path1, row.names=FALSE)
+  TDH$vot <- TDH$vot.I0.m*TDH$I0 + TDH$vot.I1.m*TDH$I1 + TDH$vot.I2.m*TDH$I2
   
+  write.csv(TDH[,c("trip_id", "CS", "FE_VIA", "time", "speed", "HH.IpC",
+                   "RENDA_FA", "vot", "ID_PESS")],
+            out.path1,
+            row.names=FALSE)
+  
+  write.csv(TDH,
+            out.path1.5,
+            row.names=FALSE)
   
   # aggregate by week
   TD$CS.w <- ave(TD$CS, TD$weeks, FUN = sum)
   TD$FE.w <- ave(TD$FE_VIA, TD$weeks, FUN = sum)
   TD$FE.w_factor <- TD$FE.w/(FE_week/5)
+  
+  TD$time.fe <- TD$time*TD$FE_VIA
+  TD$time.w <- ave(TD$time.fe, TD$weeks, FUN = sum)
+  
   TW <- TD[!duplicated(TD$weeks), ]
   TW <- TW[order(TW$weeks),] 
-  TW <- TW[,c("weeks", "CS.w", "FE.w","FE.w_factor")]
+  TW <- TW[,c("weeks", "CS.w", "FE.w","FE.w_factor", "time.w")]
+  
   TW$CS.w <- (TW$CS.w/TW$FE.w_factor)
+  TW$time.w <- (TW$time.w/TW$FE.w_factor)
+  
   write.csv(TW, out.path2, row.names=FALSE)

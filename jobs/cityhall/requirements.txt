@@ -1,0 +1,2 @@
+git+https://github.com/ehaydenr/bdeep
+requests==2.11.1

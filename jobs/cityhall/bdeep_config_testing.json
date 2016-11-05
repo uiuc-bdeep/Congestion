@@ -1,0 +1,13 @@
+{
+	"name": "cityhall",
+	"environment": "DEV",
+	"inputRoot": ".",
+	"outputRoot": ".",
+	"mainPath": ".",
+	"args": {
+		"name": "BDEEP Member",
+		"authEndpoint": "http://api.olhovivo.sptrans.com.br/v0/Login/Autenticar?token=03d67f7284935628b551109bd81b5cb4f2fc2dc594b7dbdeaf636587e7282046",
+		"getEndpoint": "http://api.olhovivo.sptrans.com.br/v0/Posicao",
+		"outputPath": "/var/log/bdeep/buslocations-%s.csv"
+	}
+}
